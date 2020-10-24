@@ -1,9 +1,8 @@
 import cv2
-import numpy as np
-from PIL import Image
 import os
 import time
-from darknet import load_net,load_meta,detect
+from detectSwoon import Net
+import argparse
 
 def logging_time(original_fn):
     def wrapper_fn(*args, **kwargs):
@@ -14,40 +13,6 @@ def logging_time(original_fn):
         return result
     return wrapper_fn
 
-class Net():
-    
-    @logging_time
-    def __init__(self, cfg_path, weight_path, data_path):
-        self.net = load_net(cfg_path.encode(), weight_path.encode(), 0)
-        self.meta = load_meta(data_path.encode())
-        
-#     @logging_time
-    def detectSwoon(self, frame):
-
-        global duration
-
-        tmp = Image.fromarray(frame[:,:,::-1], 'RGB')
-        tmp_file_path = os.getenv("HOME")+'/.saveJohn_tmp/tmp.jpg'
-
-        tmp.save(tmp_file_path)
-        
-        detection_result = detect(self.net, self.meta, tmp_file_path.encode())
-        
-            # detection_result[0] = class
-            # detection_result[1] = probability
-            # detection_reuslt[2] = (b.x, b.y, b.w, b.h)
-        
-        os.remove(tmp_file_path)
-        
-        if len(detection_result)==0 or detection_result[0][1]< 0.8 :
-            duration = 0
-            return None
-        else :
-            duration = duration+1
-            return list(detection_result)[0]
-
-    
-# @logging_time
 def drawBoudingBox(points, frame):
     
     start_point = (int(points[0]), int(points[1]))
@@ -58,13 +23,29 @@ def drawBoudingBox(points, frame):
 
 if __name__=='__main__':
     
+    parser = argparse.ArgumentParser(description='Save John')
+    
+    parser.add_argument('--cfg', type=str, default='cfg/obj.cfg', help='path to cfg file')
+    parser.add_argument('--data', type=str, default='cfg/obj.data', help='path to data file')
+    parser.add_argument('--weight', type=str, default='weight/obj_final.weights', help='path to data file')
+    parser.add_argument('--input', type=str, default='input/', help='path to input files(.mp4)')
+    
+    args = parser.parse_args()
+    
     duration = 0
 
-    cfg_path = "/root/cfg/obj.cfg"
-    weight_path = "/root/4th/obj_120000.weights"
-    data_path = "/root/cfg/obj.data"    
+<<<<<<< HEAD
+<<<<<<< HEAD
+    net = Net(args.cfg, args.weight, args.data)
+=======
+=======
+>>>>>>> 6b37b5732d48b9c5b7eeee19ec638906eb8015c0
+    cfg_path = "cfg/obj.cfg"
+    weight_path = "weight/obj_final.weights"
+    data_path = "cfg/obj.data"    
 
     net = Net(cfg_path, weight_path, data_path)
+>>>>>>> 6b37b5732d48b9c5b7eeee19ec638906eb8015c0
     
     title = '''\033[36m
       ____                        _       _           
@@ -85,41 +66,42 @@ if __name__=='__main__':
     os.system('clear')
     print(title)
     
-    video = '/root/test.mp4'
-
-    cap = cv2.VideoCapture(video)
-    
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    frame_number = 0
-    step = 1
-    
-    while(cap.isOpened()):
+    for video in [f for f in os.listdir(args.input) if f.endswith('.mp4')] :
+        print(f'[ file name ] {video}')
         
-        if duration > 5/step: #5 sec
-            
-            print(f'[{time.ctime()}] \033[31mClass [Swoon] has detected.\033[0m')
-            duration = 0
-        
-        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
-        ret, frame = cap.read()
-    
-        if ret:
-            frame_number = frame_number + (int(fps)*step)
-            
-            img = cv2.resize(frame, (960,540))
-            result = net.detectSwoon(img)
-            
-            if result != None:
-                img = drawBoudingBox(result[2], img)
-            
-            cv2.imshow('video', img)
+        cap = cv2.VideoCapture(args.input+video)
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        frame_number = 0
+        step = 1
+
+        while(cap.isOpened()):
+
+            if duration > 5/step: #5 sec
+
+                print(f'[ {time.ctime()} ] \033[31mClass [Swoon] has detected.\033[0m')
+                duration = 0
+
+            cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
+            ret, frame = cap.read()
+
+            if ret:
+                frame_number = frame_number + (int(fps)*step)
+
+                img = cv2.resize(frame, (960,540))
+                result, duration = net.detectSwoon(img, duration)
+
+                if result != None:
+                    img = drawBoudingBox(result[2], img)
+
+                cv2.imshow('video', img)
+
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
+
+            else:
+                frame_number = 0
                 break
 
-        else:
-            frame_number = 0
-            break
-
-    cap.release()
-    cv2.destroyAllWindows()
+        cap.release()
+        cv2.destroyAllWindows()
