@@ -15,8 +15,8 @@ def logging_time(original_fn):
 
 def drawBoudingBox(points, frame):
     
-    start_point = (int(points[0]), int(points[1]))
-    end_point = (int(points[0] + points[2]), int(points[1] + points[3]))
+    start_point = (int(points[0] - points[2]/2), int(points[1] - points[3]/2))
+    end_point = (int(points[0] + points[2]/2), int(points[1] + points[3]/2))
     
     return cv2.rectangle(frame, start_point, end_point, (0,0,255), 3)
     
@@ -33,19 +33,6 @@ if __name__=='__main__':
     args = parser.parse_args()
     
     duration = 0
-
-<<<<<<< HEAD
-<<<<<<< HEAD
-    net = Net(args.cfg, args.weight, args.data)
-=======
-=======
->>>>>>> 6b37b5732d48b9c5b7eeee19ec638906eb8015c0
-    cfg_path = "cfg/obj.cfg"
-    weight_path = "weight/obj_final.weights"
-    data_path = "cfg/obj.data"    
-
-    net = Net(cfg_path, weight_path, data_path)
->>>>>>> 6b37b5732d48b9c5b7eeee19ec638906eb8015c0
     
     title = '''\033[36m
       ____                        _       _           
